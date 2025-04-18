@@ -1,105 +1,63 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import mermaid from 'mermaid';
-import axios from 'axios';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import SignIn from './pages/SignIn';
+import Dashboard from './pages/Dashboard';
+import UseCases from './pages/UseCases';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://marchina-init.calmmoss-a81a16c4.eastus.azurecontainerapps.io/api/diagrams/flowchart';
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#1976d2',
+      light: '#42a5f5',
+      dark: '#1565c0',
+    },
+    background: {
+      default: '#f5f5f5',
+      paper: '#ffffff',
+    },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontSize: '2.5rem',
+      fontWeight: 600,
+    },
+    h2: {
+      fontSize: '2rem',
+      fontWeight: 600,
+    },
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 500,
+        },
+      },
+    },
+  },
+});
 
 function App() {
-  const [diagram, setDiagram] = useState('');
-  const [svg, setSvg] = useState('');
-  const [requirement, setRequirement] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const renderDiagram = useCallback(async () => {
-    try {
-      const { svg } = await mermaid.render('mermaid-diagram', diagram);
-      setSvg(svg);
-    } catch (error) {
-      console.error('Error rendering diagram:', error);
-      setError('Error rendering diagram. Please check your Mermaid syntax.');
-    }
-  }, [diagram]);
-  
-  useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: true,
-      theme: 'default',
-      securityLevel: 'loose',
-    });
-    if (diagram) {
-      renderDiagram();
-    }
-  }, [diagram, renderDiagram]);
-
-
-  const handleVoiceInput = async () => {
-    try {
-      const recognition = new window.webkitSpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setRequirement(transcript);
-        handleSubmit(transcript);
-      };
-      recognition.start();
-    } catch (error) {
-      console.error('Error with voice recognition:', error);
-      setError('Error with voice recognition. Please try again.');
-    }
-  };
-
-  const handleSubmit = async (text = requirement) => {
-    try {
-      setIsLoading(true);
-      setError('');
-      const response = await axios.post(API_URL, {
-        prompt: text
-      });
-      setDiagram(response.data.mermaidCode);
-    } catch (error) {
-      console.error('Error fetching diagram:', error);
-      setError('Error fetching diagram. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="App">
-      <h1>Marchina</h1>
-      <div className="controls">
-        <div className="requirement-input">
-          <textarea
-            value={requirement}
-            onChange={(e) => setRequirement(e.target.value)}
-            placeholder="Enter your requirement here..."
-            rows="3"
-          />
-          <button onClick={() => handleSubmit()}>Submit</button>
-          <button onClick={handleVoiceInput}>Voice Input</button>
-        </div>
-      </div>
-      {error && <div className="error">{error}</div>}
-      {isLoading ? (
-        <div className="loading">Generating diagram...</div>
-      ) : (
-        <div className="editor-container">
-          <textarea
-            value={diagram}
-            onChange={(e) => setDiagram(e.target.value)}
-            className="editor"
-            rows="10"
-            placeholder="Mermaid diagram will appear here..."
-          />
-          <div
-            className="visualizer"
-            dangerouslySetInnerHTML={{ __html: svg }}
-          />
-        </div>
-      )}
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route path="/" element={<SignIn />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/use-cases" element={<UseCases />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
