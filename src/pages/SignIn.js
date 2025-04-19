@@ -70,7 +70,7 @@ const SignIn = () => {
           transition={{ duration: 0.5, delay: 0.6 }}
           className="mt-8 text-center text-sm text-gray-600"
         >
-          <p>© 2024 Marchina AI. All rights reserved.</p>
+          <p>© 2025 Marchina AI. All rights reserved.</p>
         </motion.div>
       </motion.div>
     </div>
