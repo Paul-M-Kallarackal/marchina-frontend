@@ -3,6 +3,7 @@ import { Box, Paper, TextField, Button, Typography, IconButton, ToggleButton, To
 import { Link } from 'react-router-dom';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
+import StopIcon from '@mui/icons-material/Stop';
 import DownloadIcon from '@mui/icons-material/Download';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
