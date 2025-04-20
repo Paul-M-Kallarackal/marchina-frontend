@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Box, Paper, TextField, Button, Typography, IconButton, ToggleButton, ToggleButtonGroup, Chip } from '@mui/material';
 import { Link } from 'react-router-dom';
 import MicIcon from '@mui/icons-material/Mic';
+import StopIcon from '@mui/icons-material/Stop';
 import DownloadIcon from '@mui/icons-material/Download';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -34,6 +35,8 @@ export default function DiagramGenerator() {
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('diagram');
   const [copied, setCopied] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [stopRecording, setStopRecording] = useState(() => () => {});
 
   const renderDiagram = useCallback(async (diagramText) => {
     try {
@@ -46,20 +49,155 @@ export default function DiagramGenerator() {
   }, []);
 
   const handleVoiceInput = async () => {
-    try {
-      const recognition = new window.webkitSpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setDescription(transcript);
-      };
-      recognition.start();
-    } catch (error) {
-      console.error('Error with voice recognition:', error);
-      setError('Error with voice recognition. Please try again.');
-    }
-  };
-
+      try {
+        // Set recording state
+        setIsRecording(true);
+        setError(null);
+        
+        console.log("Starting voice input...");
+        
+        // Create an AudioContext
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: 16000 // Standard sample rate for speech recognition
+        });
+        
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        
+        console.log("Microphone access granted");
+        
+        // Create a WebSocket connection
+        const ws = new WebSocket('ws://localhost:8080/api/speech/stream');
+        
+        // Create a MediaStreamSource from the microphone stream
+        const source = audioContext.createMediaStreamSource(stream);
+        
+        // Create a ScriptProcessorNode for audio processing
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+        
+        // Connect the source to the processor
+        source.connect(processor);
+        
+        // Connect the processor to the destination (required for the processor to work)
+        processor.connect(audioContext.destination);
+        
+        // Flag to track if we've manually stopped recording
+        let isStopped = false;
+        
+        // Keep track of final transcriptions and current partial transcription
+        let finalTranscriptions = [];
+        let currentPartial = '';
+        
+        // Function to clean up resources
+        const cleanup = () => {
+          if (isStopped) return;
+          isStopped = true;
+          
+          console.log('Cleaning up audio resources');
+          
+          // Disconnect audio nodes
+          processor.disconnect();
+          source.disconnect();
+          
+          // Stop all tracks on the stream to release the microphone
+          stream.getTracks().forEach(track => track.stop());
+          
+          // Close WebSocket if still open
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close();
+          }
+          
+          setIsRecording(false);
+        };
+        
+        // Handle WebSocket events
+        ws.onopen = () => {
+          console.log('WebSocket connection established');
+          
+          // Initialize with existing description if any
+          if (description) {
+            finalTranscriptions = [description];
+          }
+        };
+        
+        // Handle WebSocket messages
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('Received transcription:', data);
+            
+            if (data.type === 'transcription') {
+              if (data.isFinal) {
+                // Add this final transcription to our collection
+                finalTranscriptions.push(data.text);
+                // Clear the current partial
+                currentPartial = '';
+              } else {
+                // Update the current partial transcription
+                currentPartial = data.text;
+              }
+              
+              // Update the description with all final transcriptions followed by the current partial
+              const finalText = finalTranscriptions.join(' ');
+              setDescription(finalText + (currentPartial ? ' ' + currentPartial : ''));
+            } else if (data.type === 'error') {
+              setError(data.message);
+            }
+          } catch (e) {
+            console.error('Error parsing WebSocket message:', e);
+          }
+        };
+        
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setError('Error with transcription service. Please try again.');
+          cleanup();
+        };
+        
+        ws.onclose = () => {
+          console.log('WebSocket connection closed');
+          cleanup();
+        };
+        
+        // Process audio data
+        processor.onaudioprocess = (e) => {
+          if (ws.readyState === WebSocket.OPEN && !isStopped) {
+            // Get the PCM audio data from the input buffer
+            const inputData = e.inputBuffer.getChannelData(0);
+            
+            // Convert Float32Array to Int16Array (16-bit PCM)
+            const pcmData = new Int16Array(inputData.length);
+            
+            for (let i = 0; i < inputData.length; i++) {
+              // Convert from [-1.0, 1.0] to [-32768, 32767]
+              pcmData[i] = Math.max(-32768, Math.min(32767, Math.floor(inputData[i] * 32767)));
+            }
+            
+            // Send the audio data
+            ws.send(pcmData.buffer);
+          }
+        };
+        
+        // Set up the stop recording function
+        setStopRecording(() => () => {
+          console.log('Manual stop recording triggered');
+          cleanup();
+        });
+        
+      } catch (error) {
+        console.error('Error with voice recording:', error);
+        setError('Error accessing microphone. Please check permissions and try again.');
+        setIsRecording(false);
+      }
+    };
+  
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -119,7 +257,7 @@ export default function DiagramGenerator() {
   };
 
   return (
-    <Box sx={{ 
+    <Box sx={{  
       maxWidth: 1400, 
       width: '100%',
       mx: 'auto', 
@@ -249,7 +387,7 @@ export default function DiagramGenerator() {
             placeholder="Example: Design a microservices architecture for an e-commerce platform with user authentication, product catalog, and payment processing"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            disabled={loading}
+            disabled={loading || isRecording}
             sx={{ 
               mb: 2,
               '& .MuiOutlinedInput-root': {
@@ -262,7 +400,7 @@ export default function DiagramGenerator() {
             <Button
               type="submit"
               variant="contained"
-              disabled={loading || !description.trim()}
+              disabled={loading || !description.trim() || isRecording}
               sx={{ 
                 px: 4, 
                 py: 1.5,
@@ -297,17 +435,30 @@ export default function DiagramGenerator() {
                 'Generate Diagram'
               )}
             </Button>
-            <IconButton 
-              onClick={handleVoiceInput} 
-              disabled={loading}
-              title="Voice Input"
-              sx={{ 
-                border: '1px solid',
-                borderColor: 'divider'
-              }}
-            >
-              <MicIcon />
-            </IconButton>
+            {isRecording ? (
+              <IconButton 
+                onClick={stopRecording} 
+                title="Stop Recording"
+                sx={{ 
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
+                <StopIcon />
+              </IconButton>
+            ) : (
+              <IconButton 
+                onClick={handleVoiceInput} 
+                disabled={loading || isRecording}
+                title="Voice Input"
+                sx={{ 
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
+                <MicIcon />
+              </IconButton>
+            )}
             <Box sx={{ flex: 1 }} />
             <Link to="/use-cases" style={{ textDecoration: 'none' }}>
               <Button 
@@ -318,7 +469,7 @@ export default function DiagramGenerator() {
                 Learn More
               </Button>
             </Link>
-          </Box>
+            </Box>
         </form>
       </Paper>
 
@@ -329,7 +480,7 @@ export default function DiagramGenerator() {
             mb: 2, 
             p: 2, 
             bgcolor: 'error.light',
-            color: 'error.dark',
+            color: 'white',  // Changed to white for better visibility
             borderRadius: 2
           }}
         >
@@ -457,4 +608,5 @@ export default function DiagramGenerator() {
       )}
     </Box>
   );
-} 
+}
+
