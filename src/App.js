@@ -5,6 +5,9 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { SignIn } from './components/SignIn';
 import Dashboard from './pages/Dashboard';
 import UseCases from './pages/UseCases';
+import { Projects } from './pages/Projects';
+import { ProjectDetails } from './pages/ProjectDetails';
+import { DiagramEditor } from './pages/DiagramEditor';
 import { Navigation } from './components/Navigation';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -119,12 +122,36 @@ function App() {
           <div className="min-h-screen bg-gray-100">
             <Routes>
               <Route path="/signin" element={<SignIn />} />
-              <Route path="/" element={<Navigate to="/signin" replace />} />
+              <Route path="/" element={<Navigate to="/projects" replace />} />
               <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  <ProtectedRoute>
+                    <Projects />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/:projectId"
+                element={
+                  <ProtectedRoute>
+                    <ProjectDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/:projectId/diagrams/:diagramId"
+                element={
+                  <ProtectedRoute>
+                    <DiagramEditor />
                   </ProtectedRoute>
                 }
               />
