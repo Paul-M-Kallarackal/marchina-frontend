@@ -2,9 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import SignIn from './pages/SignIn';
+import { SignIn } from './components/SignIn';
 import Dashboard from './pages/Dashboard';
 import UseCases from './pages/UseCases';
+import { Navigation } from './components/Navigation';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import './App.css';
 
 const theme = createTheme({
   palette: {
@@ -92,18 +95,52 @@ const theme = createTheme({
   },
 });
 
+// Protected Route component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/signin" />;
+  }
+  return (
+    <>
+      <Navigation />
+      {children}
+    </>
+  );
+};
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Routes>
-          <Route path="/" element={<SignIn />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/use-cases" element={<UseCases />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-100">
+            <Routes>
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/" element={<Navigate to="/signin" replace />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/use-cases"
+                element={
+                  <ProtectedRoute>
+                    <UseCases />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
