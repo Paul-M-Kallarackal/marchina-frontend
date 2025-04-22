@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Navigation = () => {
     const navigate = useNavigate();
-    const user = authService.getCurrentUser();
+    const { user, signOut } = useAuth();
 
     const handleSignOut = async () => {
-        await authService.signOut();
+        signOut();
         navigate('/signin');
     };
 
@@ -31,28 +31,24 @@ export const Navigation = () => {
                                 <NavLink to="/projects" className={navLinkClass}>
                                     Projects
                                 </NavLink>
-                                <NavLink to="/dashboard" className={navLinkClass}>
-                                    Diagram Generator
-                                </NavLink>
                                 <NavLink to="/use-cases" className={navLinkClass}>
                                     Use Cases
                                 </NavLink>
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center">
-                        {user && (
-                            <div className="flex items-center">
-                                <span className="text-gray-300 mr-4">{user.name}</span>
-                                <button
-                                    onClick={handleSignOut}
-                                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-                                >
-                                    Sign Out
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    
+                    {user && (
+                        <div className="flex items-center">
+                            <span className="text-gray-300 mr-4">{user.name}</span>
+                            <button
+                                onClick={handleSignOut}
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </nav>

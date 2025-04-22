@@ -13,17 +13,23 @@ import {
   Button,
   ToggleButtonGroup,
   ToggleButton,
-  Alert
+  Alert,
+  TextField,
+  Snackbar
 } from '@mui/material';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import CodeIcon from '@mui/icons-material/Code';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import axios from 'axios';
+import SaveIcon from '@mui/icons-material/Save';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import { DiagramCard } from '../components/DiagramCard';
 import { authService } from '../services/authService';
 import mermaid from 'mermaid';
-import { getDiagram } from '../services/api';
+import { getDiagram, createDiagram, updateDiagram } from '../services/api';
 import { buildUrl } from '../constants/api';
+import { CreateDiagramModal } from '../components/CreateDiagramModal';
 
 // Initialize mermaid
 mermaid.initialize({
@@ -43,6 +49,11 @@ export const ProjectDetails = () => {
   const [viewMode, setViewMode] = useState('diagram');
   const [diagramSvg, setDiagramSvg] = useState('');
   const [renderError, setRenderError] = useState(null);
+  const [isDiagramModalOpen, setIsDiagramModalOpen] = useState(false);
+  const [editedCode, setEditedCode] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const renderDiagram = useCallback(async (content) => {
     try {
@@ -84,18 +95,20 @@ export const ProjectDetails = () => {
         };
 
         // Fetch project details
-        const projectResponse = await axios.get(
+        const projectResponse = await fetch(
           buildUrl(`/projects/${projectId}`),
           { headers }
-        );
-        setProject(projectResponse.data);
+        ).then(res => res.json());
+        
+        setProject(projectResponse);
 
         // Fetch diagrams for the project
-        const diagramsResponse = await axios.get(
+        const diagramsResponse = await fetch(
           buildUrl(`/projects/${projectId}/diagrams`),
           { headers }
-        );
-        setDiagrams(diagramsResponse.data);
+        ).then(res => res.json());
+        
+        setDiagrams(diagramsResponse);
       } catch (err) {
         setError(err.message);
         console.error('Error fetching project data:', err);
@@ -113,13 +126,32 @@ export const ProjectDetails = () => {
     }
   }, [selectedDiagram, viewMode, renderDiagram]);
 
+  const cleanDiagramCode = (code) => {
+    if (!code) return '';
+    
+    // Remove ```mermaid and ``` tags
+    let cleanedCode = code.replace(/```mermaid\n?/g, '').replace(/```/g, '');
+    
+    // Remove leading and trailing whitespace
+    cleanedCode = cleanedCode.trim();
+    
+    return cleanedCode;
+  };
+
   const handleDiagramClick = async (diagram) => {
     try {
       setLoadingDiagram(true);
       setRenderError(null);
       const diagramData = await getDiagram(projectId, diagram.id);
+      
+      // Clean the diagram code before setting it
+      const cleanedCode = cleanDiagramCode(diagramData.content);
+      diagramData.content = cleanedCode;
+      
       setSelectedDiagram(diagramData);
+      setEditedCode(cleanedCode);
       setViewMode('diagram');
+      await renderDiagram(cleanedCode);
     } catch (err) {
       console.error('Error fetching diagram:', err);
       setError('Failed to load diagram details');
@@ -128,6 +160,56 @@ export const ProjectDetails = () => {
     }
   };
 
+  const handleCodeChange = async (e) => {
+    const newCode = cleanDiagramCode(e.target.value);
+    setEditedCode(newCode);
+    try {
+      await renderDiagram(newCode);
+      setRenderError(null);
+    } catch (error) {
+      console.error('Error updating diagram:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const cleanedCode = cleanDiagramCode(editedCode);
+
+      await updateDiagram(projectId, selectedDiagram.id, {
+        name: selectedDiagram.name,
+        type: selectedDiagram.type,
+        content: cleanedCode
+      });
+
+      // Update local state
+      setSelectedDiagram(prev => ({ ...prev, content: cleanedCode }));
+      setEditedCode(cleanedCode);
+      await renderDiagram(cleanedCode);
+      setSaveSuccess(true);
+
+      // Update the diagram in the list
+      setDiagrams(prevDiagrams => 
+        prevDiagrams.map(d => 
+          d.id === selectedDiagram.id 
+            ? { ...d, content: cleanedCode }
+            : d
+        )
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(editedCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleCloseDiagram = () => {
     setSelectedDiagram(null);
@@ -135,6 +217,36 @@ export const ProjectDetails = () => {
     setDiagramSvg('');
     setViewMode('diagram');
     setRenderError(null);
+  };
+
+  const handleCreateDiagram = async (data) => {
+    try {
+      const token = authService.getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Create a new diagram in the project
+      const diagramData = {
+        type: data.type,
+        requirements: data.requirements
+      };
+
+      const createResponse = await createDiagram(projectId, diagramData);
+
+      // Add the new diagram to the state
+      setDiagrams(prevDiagrams => [...prevDiagrams, createResponse]);
+      
+      // Close the create diagram modal
+      setIsDiagramModalOpen(false);
+
+      // Show the newly created diagram
+      handleDiagramClick(createResponse);
+    } catch (error) {
+      console.error('Error creating diagram:', error);
+      setError(error.message || 'Failed to create diagram');
+      throw error;
+    }
   };
 
   if (loading) {
@@ -160,22 +272,41 @@ export const ProjectDetails = () => {
       {project && (
         <>
           <Box mb={4}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {project.name}
-            </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
-              {project.description}
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+              <Box>
+                <Typography variant="h4" component="h1" gutterBottom>
+                  {project.name}
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  {project.description}
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AutoGraphIcon />}
+                onClick={() => setIsDiagramModalOpen(true)}
+                sx={{
+                  background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1565c0, #1976d2)',
+                  }
+                }}
+              >
+                Generate Diagram
+              </Button>
+            </Box>
           </Box>
 
-          <Box mb={4}>
+          <Box>
             <Typography variant="h5" component="h2" gutterBottom>
               Diagrams
             </Typography>
+
             {diagrams.length === 0 ? (
               <Box 
                 sx={{ 
-                  py: 8, 
+                  py: 6, 
                   textAlign: 'center',
                   bgcolor: 'background.paper',
                   borderRadius: 2,
@@ -186,17 +317,9 @@ export const ProjectDetails = () => {
                 <Typography variant="body1" color="text.secondary">
                   No diagrams available for this project yet.
                 </Typography>
-                <Button 
-                  variant="outlined" 
-                  color="primary" 
-                  sx={{ mt: 2 }}
-                  onClick={() => {/* TODO: Add diagram generation logic */}}
-                >
-                  Generate Diagrams
-                </Button>
               </Box>
             ) : (
-              <Grid container spacing={3}>
+              <Grid container spacing={2}>
                 {diagrams.map((diagram) => (
                   <Grid item xs={12} md={6} key={diagram.id}>
                     <DiagramCard 
@@ -239,6 +362,39 @@ export const ProjectDetails = () => {
                           <CodeIcon sx={{ mr: 1 }} /> Code
                         </ToggleButton>
                       </ToggleButtonGroup>
+                      {viewMode === 'code' && (
+                        <>
+                          <Button
+                            startIcon={copied ? <CheckCircleIcon /> : <ContentCopyIcon />}
+                            onClick={handleCopyCode}
+                            variant="outlined"
+                            size="small"
+                            sx={{ borderRadius: 2 }}
+                          >
+                            {copied ? 'Copied!' : 'Copy Code'}
+                          </Button>
+                          <Button
+                            startIcon={<SaveIcon />}
+                            onClick={handleSave}
+                            variant="contained"
+                            size="small"
+                            disabled={saving}
+                            sx={{ 
+                              borderRadius: 2,
+                              background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+                              '&:hover': {
+                                background: 'linear-gradient(45deg, #1565c0, #1976d2)',
+                              }
+                            }}
+                          >
+                            {saving ? (
+                              <span className="loading-dots">Saving</span>
+                            ) : (
+                              'Save Changes'
+                            )}
+                          </Button>
+                        </>
+                      )}
                       <IconButton onClick={handleCloseDiagram} size="small">
                         <XMarkIcon className="h-5 w-5" />
                       </IconButton>
@@ -253,33 +409,39 @@ export const ProjectDetails = () => {
                   )}
                   <Box sx={{ mt: 2 }}>
                     {viewMode === 'code' ? (
-                      <pre style={{ 
-                        whiteSpace: 'pre-wrap',
-                        wordWrap: 'break-word',
-                        backgroundColor: '#f5f5f5',
-                        padding: '1rem',
-                        borderRadius: '4px',
-                        fontFamily: 'monospace',
-                        fontSize: '14px',
-                        lineHeight: '1.5'
-                      }}>
-                        {selectedDiagram.content}
-                      </pre>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Edit the diagram code below
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={20}
+                          variant="outlined"
+                          value={editedCode}
+                          onChange={handleCodeChange}
+                          sx={{ 
+                            fontFamily: 'monospace',
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              backgroundColor: '#fff'
+                            }
+                          }}
+                        />
+                      </Box>
                     ) : (
-                      <Box 
-                        sx={{ 
-                          minHeight: 400,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: '#fff',
-                          borderRadius: 2,
-                          p: 3,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          overflow: 'auto'
-                        }}
-                      >
+                      <Box sx={{ 
+                        minHeight: 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: '#fff',
+                        borderRadius: 2,
+                        p: 3,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        overflow: 'auto'
+                      }}>
                         {diagramSvg ? (
                           <div dangerouslySetInnerHTML={{ __html: diagramSvg }} />
                         ) : !renderError && (
@@ -292,6 +454,19 @@ export const ProjectDetails = () => {
               </>
             )}
           </Dialog>
+
+          <CreateDiagramModal
+            isOpen={isDiagramModalOpen}
+            onClose={() => setIsDiagramModalOpen(false)}
+            onSubmit={handleCreateDiagram}
+          />
+
+          <Snackbar
+            open={saveSuccess}
+            autoHideDuration={3000}
+            onClose={() => setSaveSuccess(false)}
+            message="Changes saved successfully"
+          />
         </>
       )}
     </Container>

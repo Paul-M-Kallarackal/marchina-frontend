@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ProjectCard } from '../components/ProjectCard';
 import { CreateProjectModal } from '../components/CreateProjectModal';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { projectService } from '../services/projectService';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Projects = () => {
     const [projects, setProjects] = useState([]);
@@ -10,30 +11,38 @@ export const Projects = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const fetchProjects = async () => {
+    const { token } = useAuth();
+
+    const fetchProjects = useCallback(async () => {
         try {
             setIsLoading(true);
             setError('');
-            const data = await projectService.getProjects();
+            console.log('token2', token);
+            const data = await projectService.getProjects(token);
             setProjects(data);
-        } catch (err) {
-            setError('Failed to load projects');
-            console.error('Error fetching projects:', err);
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+            setError('Failed to fetch projects');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchProjects();
-    }, []);
+    }, [fetchProjects]);
 
-    const handleCreateProject = async (name, description) => {
+    const handleCreateProject = async (projectData) => {
         try {
-            const newProject = await projectService.createProject(name, description);
-            setProjects(prevProjects => [newProject, ...prevProjects]);
-        } catch (err) {
-            throw new Error(err.response?.data?.error || 'Failed to create project');
+            setIsLoading(true);
+            await projectService.createProject(projectData, token);
+            await fetchProjects();
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error('Error creating project:', error);
+            setError('Failed to create project');
+        } finally {
+            setIsLoading(false);
         }
     };
 

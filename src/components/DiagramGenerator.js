@@ -11,7 +11,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import ArchitectureIcon from '@mui/icons-material/Architecture';
 import SchemaIcon from '@mui/icons-material/Schema';
-import { processRequest } from '../services/api';
+import { processRequest, createDiagram } from '../services/api';
 import mermaid from 'mermaid';
 
 mermaid.initialize({
@@ -34,6 +34,7 @@ export default function DiagramGenerator() {
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('diagram');
   const [copied, setCopied] = useState(false);
+  const [diagramId, setDiagramId] = useState('');
 
   const renderDiagram = useCallback(async (diagramText) => {
     try {
@@ -60,30 +61,35 @@ export default function DiagramGenerator() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
+  const handleCreateDiagram = async () => {
     try {
-      const response = await processRequest(description);
-      console.log('API Response:', response);
-      
-      if (response.success && response.result) {
-        const code = extractMermaidCode(response.result);
-        if (code) {
-          setMermaidCode(code);
-          await renderDiagram(code);
-        } else {
-          setError('Could not extract diagram code from response');
-        }
-      } else {
-        setError(response.message || 'Failed to generate diagram');
+      setLoading(true);
+      setError(null);
+
+      // Get the authentication token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
       }
+
+      // Process the request to get Mermaid code
+      const mermaidCode = await processRequest(description);
+      
+      // Create new diagram with the generated code
+      const newDiagram = await createDiagram({
+        title: 'Generated Diagram',
+        description: description,
+        mermaidCode: mermaidCode,
+        token: token
+      });
+
+      // Update UI state
+      setMermaidCode(mermaidCode);
+      setDiagramId(newDiagram.id);
+      setLoading(false);
     } catch (error) {
-      console.error('Error details:', error);
-      setError(error.response?.data?.message || error.message || 'An error occurred while generating the diagram');
-    } finally {
+      console.error('Error creating diagram:', error);
+      setError(error.message || 'Failed to create diagram');
       setLoading(false);
     }
   };
@@ -240,7 +246,7 @@ export default function DiagramGenerator() {
           </Box>
         </Box>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleCreateDiagram}>
           <TextField
             fullWidth
             multiline

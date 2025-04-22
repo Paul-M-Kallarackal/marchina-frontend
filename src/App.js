@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SignIn } from './components/SignIn';
-import Dashboard from './pages/Dashboard';
 import UseCases from './pages/UseCases';
 import { Projects } from './pages/Projects';
 import { ProjectDetails } from './pages/ProjectDetails';
@@ -100,11 +99,20 @@ const theme = createTheme({
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/signin" />;
   }
+
   return (
     <>
       <Navigation />
@@ -123,14 +131,6 @@ function App() {
             <Routes>
               <Route path="/signin" element={<SignIn />} />
               <Route path="/" element={<Navigate to="/projects" replace />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
               <Route
                 path="/projects"
                 element={

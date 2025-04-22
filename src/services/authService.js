@@ -8,7 +8,8 @@ class AuthService {
             password,
         });
         if (response.data.token) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
         }
         return response.data;
     }
@@ -16,7 +17,8 @@ class AuthService {
     async loginAsGuest() {
         const response = await axios.post(buildUrl('/auth/guest'));
         if (response.data.token) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
         }
         return response.data;
     }
@@ -30,8 +32,9 @@ class AuthService {
     }
 
     getToken() {
-        const user = this.getCurrentUser();
-        return user?.token;
+        const token = localStorage.getItem('token');
+        console.log('token', token);
+        return token;
     }
 }
 

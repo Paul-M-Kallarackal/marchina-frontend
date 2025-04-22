@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
 import { Paper, Typography, Box, Chip } from '@mui/material';
-import { DocumentIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { DocumentIcon } from '@heroicons/react/24/outline';
 
 export const DiagramCard = ({ diagram, projectId }) => {
     const navigate = useNavigate();
@@ -42,13 +41,6 @@ export const DiagramCard = ({ diagram, projectId }) => {
                 />
             </Box>
 
-            <Box display="flex" alignItems="center" sx={{ color: 'text.secondary' }}>
-                <ClockIcon className="h-4 w-4 mr-1" />
-                <Typography variant="caption">
-                    Created {formatDistanceToNow(new Date(diagram.createdAt), { addSuffix: true })}
-                </Typography>
-            </Box>
-
             {diagram.content && (
                 <Box mt={2}>
                     <Typography variant="body2" color="text.secondary" sx={{ 
@@ -72,7 +64,6 @@ DiagramCard.propTypes = {
         name: PropTypes.string.isRequired,
         type: PropTypes.string.isRequired,
         content: PropTypes.string,
-        createdAt: PropTypes.string.isRequired,
     }).isRequired,
     projectId: PropTypes.string.isRequired,
 }; 

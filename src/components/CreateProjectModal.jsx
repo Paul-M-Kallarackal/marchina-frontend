@@ -19,7 +19,10 @@ export const CreateProjectModal = ({ isOpen, onClose, onSubmit }) => {
         try {
             setIsSubmitting(true);
             setError('');
-            await onSubmit(name.trim(), description.trim());
+            await onSubmit({
+                name: name.trim(),
+                description: description.trim()
+            });
             setName('');
             setDescription('');
             onClose();

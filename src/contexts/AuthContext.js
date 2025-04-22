@@ -2,22 +2,28 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(undefined);
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://marchina.calmmoss-a81a16c4.eastus.azurecontainerapps.io';
+const API_URL = process.env.REACT_APP_API_URL || 'https://marchina.calmmoss-a81a16c4.eastus.azurecontainerapps.io/api';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-        
-        if (storedToken && storedUser) {
-            setToken(storedToken);
-            setUser(JSON.parse(storedUser));
-            setIsAuthenticated(true);
-        }
+        const initializeAuth = () => {
+            const storedToken = localStorage.getItem('token');
+            const storedUser = localStorage.getItem('user');
+            
+            if (storedToken && storedUser) {
+                setToken(storedToken);
+                setUser(JSON.parse(storedUser));
+                setIsAuthenticated(true);
+            }
+            setIsLoading(false);
+        };
+
+        initializeAuth();
     }, []);
 
     const handleAuthResponse = (response) => {
@@ -78,6 +84,10 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
     };
+
+    if (isLoading) {
+        return null; // or a loading spinner
+    }
 
     return (
         <AuthContext.Provider value={{ 

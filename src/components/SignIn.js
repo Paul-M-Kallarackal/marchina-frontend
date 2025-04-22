@@ -23,7 +23,7 @@ export const SignIn = () => {
 
         try {
             await signIn(email, password);
-            navigate('/dashboard');
+            navigate('/projects');
         } catch (err) {
             setError('Invalid email or password');
         } finally {
@@ -37,7 +37,7 @@ export const SignIn = () => {
 
         try {
             await loginAsGuest();
-            navigate('/dashboard');
+            navigate('/projects');
         } catch (err) {
             setError('Failed to sign in as guest');
         } finally {

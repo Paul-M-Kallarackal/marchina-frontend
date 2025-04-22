@@ -12,9 +12,13 @@ class ProjectService {
     }
 
     async createProject(projectData, token) {
-        const response = await axios.post(buildUrl('/projects'), projectData, {
+        const response = await axios.post(buildUrl('/projects'), {
+            name: projectData.name,
+            description: projectData.description
+        }, {
             headers: {
                 Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
             },
         });
         return response.data;

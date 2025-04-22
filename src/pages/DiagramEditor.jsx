@@ -10,7 +10,8 @@ import {
   ToggleButton, 
   ToggleButtonGroup,
   CircularProgress,
-  Alert
+  Alert,
+  Snackbar
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -20,9 +21,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import SaveIcon from '@mui/icons-material/Save';
 import mermaid from 'mermaid';
-import axios from 'axios';
-import { authService } from '../services/authService';
-import { buildUrl } from '../constants/api';
+import { getDiagram, updateDiagram } from '../services/api';
 
 // Initialize mermaid
 mermaid.initialize({
@@ -43,25 +42,13 @@ export const DiagramEditor = () => {
   const [viewMode, setViewMode] = useState('diagram');
   const [copied, setCopied] = useState(false);
   const [renderError, setRenderError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const renderDiagram = useCallback(async (content) => {
     try {
       setRenderError(null);
-      // First try to render as Mermaid
-      try {
-        const { svg } = await mermaid.render('mermaid-diagram', content);
-        setSvg(svg);
-        return;
-      } catch (mermaidError) {
-        console.log('Mermaid rendering failed, trying PlantUML:', mermaidError);
-        // If Mermaid fails, assume it's PlantUML
-        if (content.includes('@startuml') || content.includes('@startmindmap') || content.includes('@startgantt')) {
-          setSvg(`data:image/svg+xml;base64,${content}`);
-          return;
-        }
-        // If neither works, throw error
-        throw new Error('Failed to render diagram with both Mermaid and PlantUML');
-      }
+      const { svg } = await mermaid.render('mermaid-diagram', content);
+      setSvg(svg);
     } catch (error) {
       console.error('Error rendering diagram:', error);
       setRenderError('Failed to render diagram. Please check the code view.');
@@ -73,19 +60,10 @@ export const DiagramEditor = () => {
     const fetchDiagram = async () => {
       try {
         setLoading(true);
-        const token = authService.getToken();
-        const response = await axios.get(
-          buildUrl(`/projects/${projectId}/diagrams/${diagramId}`),
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        
-        setDiagram(response.data);
-        setDiagramCode(response.data.content || '');
-        await renderDiagram(response.data.content);
+        const response = await getDiagram(projectId, diagramId);
+        setDiagram(response);
+        setDiagramCode(response.content || '');
+        await renderDiagram(response.content);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -99,24 +77,18 @@ export const DiagramEditor = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const token = authService.getToken();
-      await axios.put(
-        buildUrl(`/projects/${projectId}/diagrams/${diagramId}`),
-        {
-          name: diagram.name,
-          type: diagram.type,
-          content: diagramCode
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      setError(null);
+
+      await updateDiagram(projectId, diagramId, {
+        name: diagram.name,
+        type: diagram.type,
+        content: diagramCode
+      });
 
       // Update local state
       setDiagram(prev => ({ ...prev, content: diagramCode }));
       await renderDiagram(diagramCode);
+      setSaveSuccess(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -149,6 +121,7 @@ export const DiagramEditor = () => {
     setDiagramCode(newCode);
     try {
       await renderDiagram(newCode);
+      setRenderError(null);
     } catch (error) {
       console.error('Error updating diagram:', error);
     }
@@ -240,9 +213,19 @@ export const DiagramEditor = () => {
                   variant="contained"
                   size="small"
                   disabled={saving}
-                  sx={{ borderRadius: 2 }}
+                  sx={{ 
+                    borderRadius: 2,
+                    background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #1565c0, #1976d2)',
+                    }
+                  }}
                 >
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? (
+                    <span className="loading-dots">Saving</span>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
               </>
             ) : (
@@ -313,6 +296,13 @@ export const DiagramEditor = () => {
           </Box>
         )}
       </Paper>
+
+      <Snackbar
+        open={saveSuccess}
+        autoHideDuration={3000}
+        onClose={() => setSaveSuccess(false)}
+        message="Changes saved successfully"
+      />
     </Box>
   );
 }; 
