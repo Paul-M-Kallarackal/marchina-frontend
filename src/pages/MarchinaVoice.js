@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { IconButton } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
+import PersonIcon from '@mui/icons-material/Person';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import AudioOutput from '../components/AudioOutput';
 
 const Message = ({ content, audioData, isLoading, type }) => (
@@ -12,29 +14,37 @@ const Message = ({ content, audioData, isLoading, type }) => (
     exit={{ opacity: 0, y: -20 }}
     className="mb-6"
   >
-    <motion.div
-      className={`rounded-2xl p-6 shadow-lg max-w-[80%] ${
-        type === 'user' 
-          ? 'bg-blue-500 text-white ml-auto' 
-          : 'bg-white text-gray-800 mr-auto'
-      }`}
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
-      <p className="text-lg">{content}</p>
-      {audioData && <AudioOutput audioData={audioData} />}
-      {isLoading && (
-        <motion.div 
-          className="flex gap-2 mt-4"
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
-          <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
-          <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
-        </motion.div>
-      )}
-    </motion.div>
+    <div className={`flex items-start ${type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`
+        w-10 h-10 rounded-full flex items-center justify-center mx-2
+        ${type === 'user' ? 'bg-blue-500 text-white' : 'bg-purple-500 text-white'}
+      `}>
+        {type === 'user' ? <PersonIcon /> : <SmartToyIcon />}
+      </div>
+      <motion.div
+        className={`rounded-2xl p-6 shadow-lg max-w-[80%] ${
+          type === 'user' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-white text-gray-800'
+        }`}
+        whileHover={{ scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
+        <p className="text-lg">{content}</p>
+        {audioData && <AudioOutput audioData={audioData} />}
+        {isLoading && (
+          <motion.div 
+            className="flex gap-2 mt-4"
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
+            <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
+            <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
+          </motion.div>
+        )}
+      </motion.div>
+    </div>
   </motion.div>
 );
 
