@@ -565,6 +565,7 @@ export default function DiagramGenerator() {
 
   return (
     <Box sx={{  
+    <Box sx={{  
       maxWidth: 1400, 
       width: '100%',
       mx: 'auto', 
@@ -695,6 +696,7 @@ export default function DiagramGenerator() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={loading || isRecording}
+            disabled={loading || isRecording}
             sx={{ 
               mb: 2,
               '& .MuiOutlinedInput-root': {
@@ -707,6 +709,7 @@ export default function DiagramGenerator() {
             <Button
               type="submit"
               variant="contained"
+              disabled={loading || !description.trim() || isRecording}
               disabled={loading || !description.trim() || isRecording}
               sx={{ 
                 px: 4, 
@@ -766,6 +769,30 @@ export default function DiagramGenerator() {
                 <MicIcon />
               </IconButton>
             )}
+            {isRecording ? (
+              <IconButton 
+                onClick={stopRecording} 
+                title="Stop Recording"
+                sx={{ 
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
+                <StopIcon />
+              </IconButton>
+            ) : (
+              <IconButton 
+                onClick={handleVoiceInput} 
+                disabled={loading || isRecording}
+                title="Voice Input"
+                sx={{ 
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
+                <MicIcon />
+              </IconButton>
+            )}
             <Box sx={{ flex: 1 }} />
             <Link to="/use-cases" style={{ textDecoration: 'none' }}>
               <Button 
@@ -776,6 +803,7 @@ export default function DiagramGenerator() {
                 Learn More
               </Button>
             </Link>
+            </Box>
             </Box>
         </form>
       </Paper>
