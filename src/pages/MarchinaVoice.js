@@ -6,6 +6,8 @@ import StopIcon from '@mui/icons-material/Stop';
 import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import AudioOutput from '../components/AudioOutput';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const Message = ({ content, audioData, isLoading, type }) => (
   <motion.div
@@ -49,6 +51,8 @@ const Message = ({ content, audioData, isLoading, type }) => (
 );
 
 export const MarchinaVoice = () => {
+  const navigate = useNavigate();
+  const { token } = useAuth();
   const [messages, setMessages] = useState([
     {
       type: 'assistant',
@@ -61,37 +65,53 @@ export const MarchinaVoice = () => {
   const [stopRecording, setStopRecording] = useState(() => () => {});
   const [currentTranscription, setCurrentTranscription] = useState('');
 
-  const handleAIResponse = async (userMessage) => {
+  // Function to handle sending messages
+  const handleSendMessage = async (message) => {
+    // Add user message to chat
+    setMessages(prev => [...prev, {
+      type: 'user',
+      content: message
+    }]);
+    
+    setIsProcessing(true);
+    
     try {
-      setIsProcessing(true);
-      
-      // Add user's message to chat
-      setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
-      
-      // Make API call to backend
       const response = await fetch('http://localhost:8080/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Add the token from AuthContext
         },
-        body: JSON.stringify({
-          message: userMessage,
-        }),
+        body: JSON.stringify({ message })
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
-      }
-
+      
       const data = await response.json();
+
+      console.log('API response data:', data);
+      console.log('Response content:', data.response);
+      console.log('Audio data received:', !!data.audioData);
+      console.log('Requirements gathered:', data.requirementsGathered);
+
       
       // Add AI's response to chat
-      setMessages(prev => [...prev, { 
-        type: 'assistant', 
+      setMessages(prev => [...prev, {
+        type: 'assistant',
         content: data.response,
-        audioData: data.audioData 
+        audioData: data.audioData,
+        requirementsGathered: data.requirementsGathered,
+        projectId: data.projectId
       }]);
-
+      
+      // Play audio response
+      if (data.audioData) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioData}`);
+        await audio.play();
+      }
+      
+      // If final message received, redirect to projects page
+      if (data.requirementsGathered && data.projectId) {
+        navigate(`/projects/${data.projectId}`);
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       setMessages(prev => [...prev, { 
@@ -157,7 +177,7 @@ export const MarchinaVoice = () => {
         if (finalTranscriptions.length > 0 || currentPartial) {
           const finalText = finalTranscriptions.join(' ') + (currentPartial ? ' ' + currentPartial : '');
           if (finalText.trim()) {
-            handleAIResponse(finalText.trim());
+            handleSendMessage(finalText.trim());
           }
         }
       };
@@ -321,4 +341,4 @@ export const MarchinaVoice = () => {
   );
 };
 
-export default MarchinaVoice; 
+export default MarchinaVoice;
