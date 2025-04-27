@@ -90,6 +90,30 @@ export const getDiagram = async (projectId, diagramId) => {
   }
 };
 
+export const getDiagrams = async (projectId) => {
+  try {
+    const token = authService.getToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    const response = await axios.get(
+      buildUrl(`/projects/${projectId}/diagrams`),
+      { headers }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching diagrams:', error);
+    throw error;
+  }
+};
+
 export const updateDiagram = async (projectId, diagramId, diagramData) => {
   try {
     const token = authService.getToken();
@@ -115,4 +139,4 @@ export const updateDiagram = async (projectId, diagramId, diagramData) => {
   }
 };
 
-export default api; 
+export default api;

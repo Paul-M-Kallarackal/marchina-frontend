@@ -12,7 +12,7 @@ export const Navigation = () => {
     };
 
     const navLinkClass = ({ isActive }) => 
-        `px-3 py-2 rounded-md text-sm font-medium ${
+        `px-3 py-2 rounded-md text-sm font-medium flex items-center ${
             isActive 
                 ? 'bg-gray-900 text-white' 
                 : 'text-gray-300 hover:bg-gray-700 hover:text-white'
@@ -30,6 +30,9 @@ export const Navigation = () => {
                             <div className="ml-10 flex items-baseline space-x-4">
                                 <NavLink to="/projects" className={navLinkClass}>
                                     Projects
+                                </NavLink>
+                                <NavLink to="/voice" className={navLinkClass}>
+                                    Voice
                                 </NavLink>
                                 <NavLink to="/use-cases" className={navLinkClass}>
                                     Use Cases
