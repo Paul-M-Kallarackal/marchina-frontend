@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconButton } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
+import PendingIcon from '@mui/icons-material/Pending';
 import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import AudioOutput from '../components/AudioOutput';
@@ -64,6 +65,53 @@ export const MarchinaVoice = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [stopRecording, setStopRecording] = useState(() => () => {});
   const [currentTranscription, setCurrentTranscription] = useState('');
+  const [wsConnected, setWsConnected] = useState(false);
+  const scrollContainerRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [messages, currentTranscription]);
+
+  // Add function to handle audio control
+  // Update the handleAudioControl function
+  const handleAudioControl = () => {
+    console.log("handleAudioControl called, audioRef:", audioRef.current);
+    
+    if (audioRef.current) {
+      try {
+        // Try multiple approaches to ensure the audio stops
+        audioRef.current.pause();
+        console.log("Audio paused");
+        
+        // Some browsers might need this to fully stop
+        audioRef.current.currentTime = 0;
+        console.log("Audio position reset");
+        
+        // Remove event listeners to prevent memory leaks
+        const audio = audioRef.current;
+        audio.removeEventListener('play', () => setIsPlaying(true));
+        audio.removeEventListener('ended', () => setIsPlaying(false));
+        audio.removeEventListener('pause', () => setIsPlaying(false));
+        
+        // Clear the reference
+        audioRef.current = null;
+        
+        // Update state
+        setIsPlaying(false);
+        
+        console.log("Audio cleanup complete");
+      } catch (error) {
+        console.error("Error stopping audio:", error);
+      }
+    } else {
+      console.log("No audio reference to stop");
+    }
+  };
 
   // Function to handle sending messages
   const handleSendMessage = async (message) => {
@@ -104,9 +152,21 @@ export const MarchinaVoice = () => {
       
       // Play audio response
       if (data.audioData) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioData}`);
-        await audio.play();
+        try {
+          const audio = new Audio(`data:audio/mp3;base64,${data.audioData}`);
+          audioRef.current = audio;
+          
+          audio.addEventListener('play', () => setIsPlaying(true));
+          audio.addEventListener('ended', () => setIsPlaying(false));
+          audio.addEventListener('pause', () => setIsPlaying(false));
+          
+          await audio.play();
+        } catch (error) {
+          console.error("Error playing audio:", error);
+        }
       }
+      
+       
       
       // If final message received, redirect to projects page
       if (data.requirementsGathered && data.projectId) {
@@ -124,6 +184,7 @@ export const MarchinaVoice = () => {
     }
   };
 
+  
   const handleVoiceInput = async () => {
     try {
       setIsRecording(true);
@@ -160,6 +221,7 @@ export const MarchinaVoice = () => {
       const cleanup = () => {
         if (isStopped) return;
         isStopped = true;
+        setWsConnected(false);
         
         console.log('Cleaning up audio resources');
         
@@ -184,6 +246,7 @@ export const MarchinaVoice = () => {
       
       ws.onopen = () => {
         console.log('WebSocket connection established');
+        setWsConnected(true);
       };
       
       ws.onmessage = (event) => {
@@ -240,6 +303,7 @@ export const MarchinaVoice = () => {
       });
       
     } catch (error) {
+      setWsConnected(false);
       console.error('Error with voice recording:', error);
       handleError('Error accessing microphone. Please check permissions and try again.');
       setIsRecording(false);
@@ -267,6 +331,7 @@ export const MarchinaVoice = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
+          ref={scrollContainerRef}
         >
           <AnimatePresence>
             {messages.map((message, index) => (
@@ -278,12 +343,13 @@ export const MarchinaVoice = () => {
                 isLoading={isProcessing && index === messages.length - 1}
               />
             ))}
-            {/* Show current transcription while recording */}
-            {isRecording && currentTranscription && (
+            {/* Single message box that handles both states */}
+            {isRecording && (
               <Message
+                key="recording-message"
                 type="user"
-                content={currentTranscription}
-                isLoading={true}
+                content={wsConnected ? currentTranscription : ""}
+                isLoading={wsConnected}
               />
             )}
           </AnimatePresence>
@@ -322,17 +388,34 @@ export const MarchinaVoice = () => {
                   : '0 0 0 2px rgba(59, 130, 246, 0.5)'
               }}
             >
+              {/* // Update the IconButton render logic */}
+              {/* // Replace the IconButton with this updated version */}
+              {/* // Update the IconButton click handler */}
               <IconButton
-                className={isRecording ? 'text-red-500' : 'text-blue-500'}
-                onClick={isRecording ? stopRecording : handleVoiceInput}
+                className={isRecording ? 'text-red-500' : isPlaying ? 'text-purple-500' : 'text-blue-500'}
+                onClick={() => {
+                  if (isPlaying) {
+                    handleAudioControl();
+                  } else if (isRecording) {
+                    stopRecording();
+                  } else {
+                    handleVoiceInput();
+                  }
+                }}
                 disabled={isProcessing}
               >
-                {isRecording ? (
+                {isPlaying ? (
+                  <StopIcon sx={{ fontSize: 32 }} />
+                ) : isRecording && !wsConnected ? (
+                  <PendingIcon sx={{ fontSize: 32 }} />
+                ) : isRecording ? (
                   <StopIcon sx={{ fontSize: 32 }} />
                 ) : (
                   <MicIcon sx={{ fontSize: 32 }} />
                 )}
               </IconButton>
+
+
             </motion.div>
           </motion.div>
         </motion.div>
