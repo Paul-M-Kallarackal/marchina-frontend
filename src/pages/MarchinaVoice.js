@@ -1,62 +1,145 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconButton } from '@mui/material';
+import { 
+  Box,
+  IconButton,
+  Typography,
+  Paper,
+  Stack,
+  Avatar,
+  Container,
+  Card,
+  CardContent,
+  Fade,
+  useTheme,
+  alpha
+} from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import AudioOutput from '../components/AudioOutput';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/AuthContext';
+import { DashboardLayout } from '../components/DashboardLayout';
 
-const Message = ({ content, audioData, isLoading, type }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-    className="mb-6"
-  >
-    <div className={`flex items-start ${type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-      <div className={`
-        w-10 h-10 rounded-full flex items-center justify-center mx-2
-        ${type === 'user' ? 'bg-blue-500 text-white' : 'bg-purple-500 text-white'}
-      `}>
-        {type === 'user' ? <PersonIcon /> : <SmartToyIcon />}
-      </div>
-      <motion.div
-        className={`rounded-2xl p-6 shadow-lg max-w-[80%] ${
-          type === 'user' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-white text-gray-800'
-        }`}
-        whileHover={{ scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
-        <p className="text-lg">{content}</p>
-        {audioData && <AudioOutput audioData={audioData} />}
-        {isLoading && (
-          <motion.div 
-            className="flex gap-2 mt-4"
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+const Message = ({ content, audioData, isLoading, type }) => {
+  const theme = useTheme();
+  
+  return (
+    <Fade in timeout={400}>
+      <Box sx={{ mb: 2.5 }}>
+        <Stack
+          direction={type === 'user' ? 'row-reverse' : 'row'}
+          spacing={2}
+          alignItems="flex-start"
+        >
+          <Avatar
+            sx={{
+              width: 32,
+              height: 32,
+              background: type === 'user' 
+                ? 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)'
+                : 'linear-gradient(135deg, #a855f7 0%, #d946ef 100%)',
+              boxShadow: theme.shadows[2]
+            }}
           >
-            <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
-            <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
-            <div className={`w-2 h-2 ${type === 'user' ? 'bg-white' : 'bg-blue-500'} rounded-full`} />
-          </motion.div>
-        )}
-      </motion.div>
-    </div>
-  </motion.div>
-);
+            {type === 'user' ? <PersonIcon sx={{ fontSize: 18 }} /> : <SmartToyIcon sx={{ fontSize: 18 }} />}
+          </Avatar>
+          
+          <Card
+            component={motion.div}
+            whileHover={{ scale: 1.01 }}
+            elevation={0}
+            sx={{
+              maxWidth: type === 'assistant' ? '70%' : '60%',
+              bgcolor: type === 'user' 
+                ? alpha(theme.palette.primary.main, 0.04)
+                : 'background.paper',
+              border: '1px solid',
+              borderColor: type === 'user'
+                ? alpha(theme.palette.primary.main, 0.1)
+                : theme.palette.divider,
+              borderRadius: 2,
+              position: 'relative',
+              overflow: 'visible',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 12,
+                [type === 'user' ? 'right' : 'left']: -6,
+                width: 12,
+                height: 12,
+                bgcolor: type === 'user' 
+                  ? alpha(theme.palette.primary.main, 0.04)
+                  : 'background.paper',
+                borderLeft: type === 'user' ? 'none' : `1px solid ${theme.palette.divider}`,
+                borderTop: `1px solid ${type === 'user' ? alpha(theme.palette.primary.main, 0.1) : theme.palette.divider}`,
+                transform: 'rotate(45deg)',
+                [type === 'user' ? 'borderRight' : 'borderLeft']: `1px solid ${type === 'user' ? alpha(theme.palette.primary.main, 0.1) : theme.palette.divider}`,
+              }
+            }}
+          >
+            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: 'text.primary',
+                  fontSize: '0.9375rem',
+                  lineHeight: 1.6,
+                  fontWeight: 400
+                }}
+              >
+                {content}
+              </Typography>
+              {audioData && <AudioOutput audioData={audioData} />}
+              {isLoading && (
+                <Stack 
+                  direction="row" 
+                  spacing={0.75} 
+                  sx={{ mt: 1 }}
+                >
+                  {[0, 1, 2].map((i) => (
+                    <Box
+                      key={i}
+                      component={motion.div}
+                      animate={{ 
+                        scale: [1, 1.2, 1],
+                        opacity: [0.4, 1, 0.4]
+                      }}
+                      transition={{ 
+                        duration: 1,
+                        repeat: Infinity,
+                        delay: i * 0.2
+                      }}
+                      sx={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: '50%',
+                        bgcolor: type === 'user' 
+                          ? 'primary.main'
+                          : 'secondary.main'
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
+            </CardContent>
+          </Card>
+        </Stack>
+      </Box>
+    </Fade>
+  );
+};
 
 export const MarchinaVoice = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
+  const theme = useTheme();
   const [messages, setMessages] = useState([
     {
       type: 'assistant',
-      content: "Hi! I'm Marchina Voice. What would you like to build?",
+      content: "Hi! I'm Marchina Voice. I can help you create any type of project. Just describe what you'd like to build, and I'll guide you through the process.",
       audioData: null,
     },
   ]);
@@ -80,18 +163,12 @@ export const MarchinaVoice = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Add the token from AuthContext
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ message })
       });
       
       const data = await response.json();
-
-      console.log('API response data:', data);
-      console.log('Response content:', data.response);
-      console.log('Audio data received:', !!data.audioData);
-      console.log('Requirements gathered:', data.requirementsGathered);
-
       
       // Add AI's response to chat
       setMessages(prev => [...prev, {
@@ -254,90 +331,179 @@ export const MarchinaVoice = () => {
     setIsRecording(false);
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-b from-blue-50 to-white"
-    >
-      <div className="container mx-auto px-4 py-8 flex flex-col h-[calc(100vh-64px)]">
-        {/* Messages Container */}
-        <motion.div 
-          className="flex-1 overflow-y-auto mb-8"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <AnimatePresence>
-            {messages.map((message, index) => (
-              <Message
-                key={index}
-                type={message.type}
-                content={message.content}
-                audioData={message.audioData}
-                isLoading={isProcessing && index === messages.length - 1}
-              />
-            ))}
-            {/* Show current transcription while recording */}
-            {isRecording && currentTranscription && (
-              <Message
-                type="user"
-                content={currentTranscription}
-                isLoading={true}
-              />
-            )}
-          </AnimatePresence>
-        </motion.div>
+  const breadcrumbs = [
+    { label: 'Projects', path: '/projects' },
+    { label: 'Marchina Voice' }
+  ];
 
-        {/* Voice Input */}
-        <motion.div 
-          className="flex justify-center items-center pb-8"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
+  const headerContent = (
+    <Box sx={{ maxWidth: '800px', mx: 'auto', mb: { xs: 3, md: 4 } }}>
+      <Typography 
+        variant="h4" 
+        sx={{ 
+          fontWeight: 600,
+          mb: 1.5,
+          background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textAlign: 'center'
+        }}
+      >
+        Marchina Voice
+      </Typography>
+      <Typography 
+        variant="body1" 
+        color="text.secondary"
+        sx={{ 
+          maxWidth: '600px',
+          mx: 'auto',
+          fontSize: '1rem',
+          lineHeight: 1.6,
+          textAlign: 'center'
+        }}
+      >
+        Describe your project requirements naturally, and I'll help you create it step by step. 
+        Just tap the microphone and start speaking.
+      </Typography>
+    </Box>
+  );
+
+  return (
+    <DashboardLayout
+      breadcrumbs={breadcrumbs}
+      headerContent={headerContent}
+    >
+      <Container 
+        maxWidth="md" 
+        sx={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 240px)',
+          pb: 3
+        }}
+      >
+        {isProcessing }
+        
+        <Paper
+          elevation={0}
+          sx={{
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: theme.palette.divider,
+            bgcolor: 'background.paper',
+            overflow: 'hidden'
+          }}
         >
-          <motion.div
-            className="relative"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          {/* Messages Container */}
+          <Box 
+            sx={{ 
+              flexGrow: 1,
+              overflowY: 'auto',
+              p: 3
+            }}
           >
-            <motion.div
-              className="absolute inset-0 bg-blue-500 rounded-full"
-              animate={{
-                scale: isRecording ? [1, 1.2, 1] : 1,
-                opacity: isRecording ? [0.5, 0.3, 0.5] : 0.5
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            <motion.div
-              className={`relative z-10 bg-white rounded-full p-6 shadow-lg cursor-pointer
-                ${isRecording ? 'bg-red-50' : 'bg-white'}`}
-              animate={{
-                boxShadow: isRecording
-                  ? '0 0 0 2px rgba(239, 68, 68, 0.5)'
-                  : '0 0 0 2px rgba(59, 130, 246, 0.5)'
+            <AnimatePresence>
+              {messages.map((message, index) => (
+                <Message
+                  key={index}
+                  type={message.type}
+                  content={message.content}
+                  audioData={message.audioData}
+                  isLoading={isProcessing && index === messages.length - 1}
+                />
+              ))}
+              {isRecording && currentTranscription && (
+                <Message
+                  type="user"
+                  content={currentTranscription}
+                  isLoading={true}
+                />
+              )}
+            </AnimatePresence>
+          </Box>
+
+          {/* Voice Input Section */}
+          <Box 
+            sx={{ 
+              p: 2,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              bgcolor: alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            <Box
+              component={motion.div}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              sx={{ 
+                position: 'relative',
+                cursor: 'pointer'
               }}
             >
-              <IconButton
-                className={isRecording ? 'text-red-500' : 'text-blue-500'}
-                onClick={isRecording ? stopRecording : handleVoiceInput}
-                disabled={isProcessing}
+              <Box
+                component={motion.div}
+                animate={{
+                  scale: isRecording ? [1, 1.2, 1] : 1,
+                  opacity: isRecording ? [0.3, 0.1, 0.3] : 0.15
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                sx={{
+                  position: 'absolute',
+                  inset: -6,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)'
+                }}
+              />
+              <Paper
+                elevation={3}
+                sx={{
+                  position: 'relative',
+                  zIndex: 1,
+                  p: 1.5,
+                  borderRadius: '50%',
+                  bgcolor: 'background.paper',
+                  background: isRecording 
+                    ? 'linear-gradient(135deg, #ef4444 0%, #f43f5e 100%)'
+                    : 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                  transition: 'all 0.3s ease'
+                }}
               >
-                {isRecording ? (
-                  <StopIcon sx={{ fontSize: 32 }} />
-                ) : (
-                  <MicIcon sx={{ fontSize: 32 }} />
-                )}
-              </IconButton>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      </div>
-    </motion.div>
+                <IconButton
+                  onClick={isRecording ? stopRecording : handleVoiceInput}
+                  disabled={isProcessing}
+                  sx={{
+                    color: '#fff',
+                    '&:hover': {
+                      bgcolor: 'transparent'
+                    },
+                    '&.Mui-disabled': {
+                      color: 'rgba(255, 255, 255, 0.5)'
+                    }
+                  }}
+                >
+                  {isRecording ? (
+                    <StopIcon sx={{ fontSize: 28 }} />
+                  ) : (
+                    <MicIcon sx={{ fontSize: 28 }} />
+                  )}
+                </IconButton>
+              </Paper>
+            </Box>
+          </Box>
+        </Paper>
+      </Container>
+    </DashboardLayout>
   );
 };
 

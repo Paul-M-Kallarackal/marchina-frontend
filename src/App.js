@@ -7,7 +7,6 @@ import UseCases from './pages/UseCases';
 import { Projects } from './pages/Projects';
 import { ProjectDetails } from './pages/ProjectDetails';
 import { DiagramEditor } from './pages/DiagramEditor';
-import { Navigation } from './components/Navigation';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MarchinaVoice } from './pages/MarchinaVoice';
 import './App.css';
@@ -116,7 +115,6 @@ const ProtectedRoute = ({ children }) => {
 
   return (
     <>
-      <Navigation />
       {children}
     </>
   );

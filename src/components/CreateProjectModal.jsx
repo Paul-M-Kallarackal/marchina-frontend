@@ -1,117 +1,114 @@
-import React, { useState } from 'react';
-import { Dialog } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Button,
+    Box,
+    Alert,
+    CircularProgress
+} from '@mui/material';
 import PropTypes from 'prop-types';
 
-export const CreateProjectModal = ({ isOpen, onClose, onSubmit }) => {
+const CreateProjectModal = ({ isOpen, onClose, onSubmit }) => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setError('');
         if (!name.trim()) {
             setError('Project name is required');
             return;
         }
-
+        setIsSubmitting(true);
         try {
-            setIsSubmitting(true);
-            setError('');
-            await onSubmit({
-                name: name.trim(),
-                description: description.trim()
-            });
-            setName('');
-            setDescription('');
-            onClose();
+            await onSubmit({ name, description });
         } catch (err) {
+            console.error("Submission error caught in modal handler:", err);
             setError(err instanceof Error ? err.message : 'Failed to create project');
-        } finally {
             setIsSubmitting(false);
         }
     };
 
+    useEffect(() => {
+        if (!isOpen) {
+            setName('');
+            setDescription('');
+            setIsSubmitting(false);
+            setError('');
+        }
+    }, [isOpen]);
+
+    const handleActualClose = () => {
+        if (isSubmitting) return;
+        onClose();
+    };
+
     return (
-        <Dialog
-            open={isOpen}
-            onClose={onClose}
-            className="relative z-50"
-        >
-            <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-            
-            <div className="fixed inset-0 flex items-center justify-center p-4">
-                <Dialog.Panel className="mx-auto max-w-lg w-full rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl">
-                    <div className="flex items-center justify-between mb-4">
-                        <Dialog.Title className="text-xl font-semibold text-gray-900 dark:text-white">
-                            Create New Project
-                        </Dialog.Title>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        >
-                            <XMarkIcon className="h-6 w-6" />
-                        </button>
-                    </div>
-
+        <Dialog open={isOpen} onClose={handleActualClose} maxWidth="sm" fullWidth>
+            <DialogTitle>Create New Project</DialogTitle>
+            <Box component="form" onSubmit={handleSubmit}>
+                <DialogContent>
                     {error && (
-                        <div className="mb-4 p-3 rounded bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-200 text-sm">
+                        <Alert severity="error" sx={{ mb: 2 }}>
                             {error}
-                        </div>
+                        </Alert>
                     )}
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Project Name *
-                            </label>
-                            <input
-                                type="text"
-                                id="name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Enter project name"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Description
-                            </label>
-                            <textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                rows={4}
-                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Enter project description"
-                            />
-                        </div>
-
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className={`px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                                    isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
-                                }`}
-                            >
-                                {isSubmitting ? 'Creating...' : 'Create Project'}
-                            </button>
-                        </div>
-                    </form>
-                </Dialog.Panel>
-            </div>
+                    <TextField
+                        autoFocus
+                        required
+                        margin="dense"
+                        id="name"
+                        label="Project Name"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        disabled={isSubmitting}
+                        sx={{ mb: 2 }}
+                    />
+                    <TextField
+                        required
+                        margin="dense"
+                        id="description"
+                        label="Description"
+                        type="text"
+                        fullWidth
+                        multiline
+                        rows={4}
+                        variant="outlined"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        disabled={isSubmitting}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={handleActualClose} disabled={isSubmitting}>Cancel</Button>
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={isSubmitting}
+                        sx={{
+                            minWidth: '150px',
+                            textTransform: 'none',
+                            background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                            color: 'white',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #5558e6 0%, #9d47f5 100%)',
+                            }
+                        }}
+                        startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+                    >
+                        {isSubmitting ? 'Creating...' : 'Create Project'}
+                    </Button>
+                </DialogActions>
+            </Box>
         </Dialog>
     );
 };
@@ -120,4 +117,6 @@ CreateProjectModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired
-}; 
+};
+
+export default CreateProjectModal; 

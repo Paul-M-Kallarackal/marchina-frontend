@@ -1,175 +1,242 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import {
+  Box,
+  Typography,
+  Grid,
+  Paper,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
+import { DashboardLayout } from '../components/DashboardLayout';
+import SchoolIcon from '@mui/icons-material/School';
+import ArchitectureIcon from '@mui/icons-material/Architecture';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import CircleIcon from '@mui/icons-material/Circle';
 
 const UseCases = () => {
+  const breadcrumbs = [
+    { label: 'Use Cases' }
+  ];
+
+  const headerContent = (
+    <>
+      <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+        Who Can Benefit from Marchina AI?
+      </Typography>
+      <Typography variant="body1" color="text.secondary">
+        Discover how Marchina AI can transform your workflow, regardless of your role or industry.
+      </Typography>
+    </>
+  );
+
+  const UserGroup = ({ title, icon: Icon, color, items }) => (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        height: '100%',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+            borderRadius: '8px',
+            p: 1,
+            mr: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon sx={{ color: 'white' }} />
+        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          {title}
+        </Typography>
+      </Box>
+      <List>
+        {items.map((item, index) => (
+          <ListItem key={index} sx={{ px: 0 }}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <CircleIcon sx={{ fontSize: 8, color: 'primary.main' }} />
+            </ListItemIcon>
+            <ListItemText
+              primary={item.title}
+              secondary={item.description}
+              primaryTypographyProps={{
+                fontWeight: 500,
+                gutterBottom: true
+              }}
+              secondaryTypographyProps={{
+                variant: 'body2',
+                color: 'text.secondary'
+              }}
+            />
+          </ListItem>
+        ))}
+      </List>
+    </Paper>
+  );
+
+  const userGroups = [
+    {
+      title: 'For Students',
+      icon: SchoolIcon,
+      items: [
+        {
+          title: 'Academic Projects',
+          description: 'Visualize complex algorithms and system architectures for your projects and research papers.'
+        },
+        {
+          title: 'Learning Aid',
+          description: 'Understand complex system concepts through visual representation of distributed systems and architectures.'
+        }
+      ]
+    },
+    {
+      title: 'For Solution Architects',
+      icon: ArchitectureIcon,
+      items: [
+        {
+          title: 'Rapid Prototyping',
+          description: 'Quickly prototype and iterate on system designs with AI-powered suggestions and optimizations.'
+        },
+        {
+          title: 'Technical Documentation',
+          description: 'Create comprehensive system documentation with clear visual representations.'
+        }
+      ]
+    },
+    {
+      title: 'For Product Managers',
+      icon: AccountTreeIcon,
+      items: [
+        {
+          title: 'Technical Communication',
+          description: 'Bridge the gap between technical and non-technical stakeholders with clear system visualizations.'
+        },
+        {
+          title: 'Feature Planning',
+          description: 'Visualize feature requirements and system impacts before development begins.'
+        }
+      ]
+    },
+    {
+      title: 'For Statisticians',
+      icon: ShowChartIcon,
+      items: [
+        {
+          title: 'Data Flow Visualization',
+          description: 'Create clear data flow diagrams and statistical process visualizations for your research.'
+        },
+        {
+          title: 'Research Documentation',
+          description: 'Document complex statistical models and analysis processes with clear visual representations.'
+        }
+      ]
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-          >
-            <ArrowBackIcon className="w-5 h-5 mr-2" />
-            Back to Dashboard
-          </Link>
-        </div>
+    <DashboardLayout
+      breadcrumbs={breadcrumbs}
+      headerContent={headerContent}
+    >
+      <Grid container spacing={3}>
+        {userGroups.map((group, index) => (
+          <Grid item xs={12} md={6} key={index}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <UserGroup {...group} />
+            </motion.div>
+          </Grid>
+        ))}
+      </Grid>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            mt: 4,
+            p: 3,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider'
+          }}
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Who Can Benefit from Marchina AI?
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover how Marchina AI can transform your workflow, regardless of your role or industry.
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">For Students</h2>
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-medium text-blue-900 mb-2">Academic Projects</h3>
-                  <p className="text-gray-600">
-                    Visualize complex algorithms and system architectures for your projects and research papers.
-                    Perfect for computer science students working on assignments or thesis projects.
-                  </p>
-                </div>
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-medium text-blue-900 mb-2">Learning Aid</h3>
-                  <p className="text-gray-600">
-                    Understand complex system concepts through visual representation.
-                    Great for studying distributed systems, database architectures, and network topologies.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">For Solution Architects</h2>
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-medium text-green-900 mb-2">Rapid Prototyping</h3>
-                  <p className="text-gray-600">
-                    Quickly prototype and iterate on system designs with AI-powered suggestions and optimizations.
-                    Save hours of manual diagram creation.
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-medium text-green-900 mb-2">Technical Documentation</h3>
-                  <p className="text-gray-600">
-                    Create comprehensive system documentation with clear visual representations.
-                    Perfect for architecture decision records and system specifications.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">For Product Managers</h2>
-              <div className="space-y-4">
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h3 className="font-medium text-purple-900 mb-2">Technical Communication</h3>
-                  <p className="text-gray-600">
-                    Bridge the gap between technical and non-technical stakeholders with clear system visualizations.
-                    Perfect for sprint planning and feature documentation.
-                  </p>
-                </div>
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h3 className="font-medium text-purple-900 mb-2">Feature Planning</h3>
-                  <p className="text-gray-600">
-                    Visualize feature requirements and system impacts before development begins.
-                    Great for product roadmaps and technical feasibility studies.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">For Statisticians</h2>
-              <div className="space-y-4">
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <h3 className="font-medium text-orange-900 mb-2">Data Flow Visualization</h3>
-                  <p className="text-gray-600">
-                    Create clear data flow diagrams and statistical process visualizations for your research.
-                    Perfect for documenting data pipelines and analysis workflows.
-                  </p>
-                </div>
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <h3 className="font-medium text-orange-900 mb-2">Research Documentation</h3>
-                  <p className="text-gray-600">
-                    Document complex statistical models and analysis processes with clear visual representations.
-                    Great for academic papers and research documentation.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12 bg-white rounded-xl shadow-sm p-6"
-        >
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Practices</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Getting Started</h3>
-              <ul className="space-y-3 text-gray-600">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Start with a clear description of your system requirements</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Specify key components and their relationships</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Mention any specific technologies or patterns</span>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Advanced Tips</h3>
-              <ul className="space-y-3 text-gray-600">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Use voice input for complex system descriptions</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Iterate on the generated design by modifying the Mermaid code</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>Download and share your diagrams for collaboration</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+            Best Practices
+          </Typography>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                Getting Started
+              </Typography>
+              <List>
+                {[
+                  'Start with a clear description of your system requirements',
+                  'Specify key components and their relationships',
+                  'Mention any specific technologies or patterns'
+                ].map((text, index) => (
+                  <ListItem key={index} sx={{ px: 0 }}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <CircleIcon sx={{ fontSize: 8, color: 'primary.main' }} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={text}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        color: 'text.secondary'
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+                Advanced Tips
+              </Typography>
+              <List>
+                {[
+                  'Use voice input for complex system descriptions',
+                  'Iterate on the generated design by modifying the Mermaid code',
+                  'Download and share your diagrams for collaboration'
+                ].map((text, index) => (
+                  <ListItem key={index} sx={{ px: 0 }}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <CircleIcon sx={{ fontSize: 8, color: 'primary.main' }} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={text}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        color: 'text.secondary'
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Grid>
+          </Grid>
+        </Paper>
+      </motion.div>
+    </DashboardLayout>
   );
 };
 

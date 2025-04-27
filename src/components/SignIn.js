@@ -5,6 +5,14 @@ import { motion } from 'framer-motion';
 import {
     TextField,
     Alert,
+    Box,
+    Container,
+    Typography,
+    Button,
+    Paper,
+    Stack,
+    useTheme,
+    alpha
 } from '@mui/material';
 
 export const SignIn = () => {
@@ -12,6 +20,7 @@ export const SignIn = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const theme = useTheme();
     
     const { signIn, loginAsGuest } = useAuth();
     const navigate = useNavigate();
@@ -25,6 +34,7 @@ export const SignIn = () => {
             await signIn(email, password);
             navigate('/projects');
         } catch (err) {
+            console.error('Sign in error:', err);
             setError('Invalid email or password');
         } finally {
             setIsLoading(false);
@@ -39,6 +49,7 @@ export const SignIn = () => {
             await loginAsGuest();
             navigate('/projects');
         } catch (err) {
+            console.error('Guest login error:', err);
             setError('Failed to sign in as guest');
         } finally {
             setIsLoading(false);
@@ -46,125 +57,203 @@ export const SignIn = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md"
-            >
+        <Box
+            sx={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 4,
+                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`
+            }}
+        >
+            <Container maxWidth="sm">
                 <motion.div
-                    initial={{ scale: 0.95 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="bg-white rounded-2xl shadow-xl overflow-hidden"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
                 >
-                    <div className="px-8 py-12">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5, delay: 0.4 }}
-                            className="text-center"
-                        >
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                                Welcome to Marchina AI
-                            </h1>
-                            <p className="text-gray-600 text-lg mb-8">
-                                Sign in or create a new account
-                            </p>
-                        </motion.div>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                            border: '1px solid',
+                            borderColor: theme.palette.divider,
+                            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.05)'
+                        }}
+                    >
+                        <Box sx={{ px: 4, py: 6 }}>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                            >
+                                <Typography
+                                    variant="h3"
+                                    sx={{
+                                        fontWeight: 600,
+                                        mb: 1,
+                                        textAlign: 'center',
+                                        background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent'
+                                    }}
                                 >
-                                    <Alert severity="error" className="mb-4">
-                                        {error}
-                                    </Alert>
-                                </motion.div>
-                            )}
-                            
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                id="email"
-                                label="Email Address"
-                                name="email"
-                                autoComplete="email"
-                                autoFocus
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={isLoading}
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: '12px',
-                                    }
-                                }}
-                            />
-                            
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                name="password"
-                                label="Password"
-                                type="password"
-                                id="password"
-                                autoComplete="current-password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={isLoading}
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: '12px',
-                                    }
-                                }}
-                            />
-
-                            <motion.div className="space-y-3 mt-6">
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                                    Welcome to Marchina
+                                </Typography>
+                                <Typography
+                                    variant="body1"
+                                    sx={{
+                                        color: 'text.secondary',
+                                        textAlign: 'center',
+                                        mb: 4,
+                                        fontSize: '1.1rem'
+                                    }}
                                 >
-                                    {isLoading ? 'Signing in...' : 'Sign In / Create Account'}
-                                </motion.button>
-
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    type="button"
-                                    onClick={handleGuestLogin}
-                                    disabled={isLoading}
-                                    className="w-full flex items-center justify-center gap-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-xl transition-all duration-200"
-                                >
-                                    {isLoading ? 'Signing in...' : 'Continue as Guest'}
-                                </motion.button>
+                                    Sign in or create a new account
+                                </Typography>
                             </motion.div>
-                        </form>
-                    </div>
 
-                    <div className="bg-gray-50 px-8 py-6">
-                        <p className="text-sm text-gray-600 text-center">
-                            By signing in, you agree to our Terms of Service and Privacy Policy
-                        </p>
-                    </div>
-                </motion.div>
+                            <form onSubmit={handleSubmit}>
+                                <Stack spacing={2.5}>
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                        >
+                                            <Alert 
+                                                severity="error"
+                                                sx={{
+                                                    borderRadius: 2,
+                                                    border: '1px solid',
+                                                    borderColor: 'error.light'
+                                                }}
+                                            >
+                                                {error}
+                                            </Alert>
+                                        </motion.div>
+                                    )}
+                                    
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        id="email"
+                                        label="Email Address"
+                                        name="email"
+                                        autoComplete="email"
+                                        autoFocus
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        disabled={isLoading}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 2,
+                                                bgcolor: 'background.paper'
+                                            }
+                                        }}
+                                    />
+                                    
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        name="password"
+                                        label="Password"
+                                        type="password"
+                                        id="password"
+                                        autoComplete="current-password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        disabled={isLoading}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 2,
+                                                bgcolor: 'background.paper'
+                                            }
+                                        }}
+                                    />
 
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.6 }}
-                    className="mt-8 text-center text-sm text-gray-600"
-                >
-                    <p>© 2025 Marchina AI. All rights reserved.</p>
+                                    <Stack spacing={2} sx={{ mt: 2 }}>
+                                        <Button
+                                            component={motion.button}
+                                            whileHover={{ scale: 1.01 }}
+                                            whileTap={{ scale: 0.99 }}
+                                            type="submit"
+                                            disabled={isLoading}
+                                            variant="contained"
+                                            size="large"
+                                            sx={{
+                                                py: 1.5,
+                                                borderRadius: 2,
+                                                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                                                '&:hover': {
+                                                    background: 'linear-gradient(135deg, #5558e6 0%, #9d47f5 100%)'
+                                                }
+                                            }}
+                                        >
+                                            {isLoading ? 'Signing in...' : 'Sign In / Create Account'}
+                                        </Button>
+
+                                        <Button
+                                            component={motion.button}
+                                            whileHover={{ scale: 1.01 }}
+                                            whileTap={{ scale: 0.99 }}
+                                            type="button"
+                                            onClick={handleGuestLogin}
+                                            disabled={isLoading}
+                                            variant="outlined"
+                                            size="large"
+                                            sx={{
+                                                py: 1.5,
+                                                borderRadius: 2,
+                                                borderColor: alpha(theme.palette.primary.main, 0.2),
+                                                color: 'text.primary',
+                                                '&:hover': {
+                                                    borderColor: 'primary.main',
+                                                    bgcolor: alpha(theme.palette.primary.main, 0.02)
+                                                }
+                                            }}
+                                        >
+                                            {isLoading ? 'Signing in...' : 'Continue as Guest'}
+                                        </Button>
+                                    </Stack>
+                                </Stack>
+                            </form>
+                        </Box>
+
+                        <Box
+                            sx={{
+                                px: 4,
+                                py: 3,
+                                bgcolor: alpha(theme.palette.background.paper, 0.4),
+                                borderTop: '1px solid',
+                                borderColor: theme.palette.divider
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                align="center"
+                            >
+                                By signing in, you agree to our Terms of Service and Privacy Policy
+                            </Typography>
+                        </Box>
+                    </Paper>
+
+                    <Typography
+                        component={motion.p}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                        variant="body2"
+                        color="text.secondary"
+                        align="center"
+                        sx={{ mt: 4 }}
+                    >
+                        © 2025 Marchina. All rights reserved.
+                    </Typography>
                 </motion.div>
-            </motion.div>
-        </div>
+            </Container>
+        </Box>
     );
 }; 
