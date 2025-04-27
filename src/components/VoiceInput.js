@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { IconButton } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
-
+import { WSS_URL } from '../constants/api';
 const VoiceInput = ({ onTranscriptionUpdate, onError, disabled }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [stopRecording, setStopRecording] = useState(() => () => {});
@@ -27,7 +27,7 @@ const VoiceInput = ({ onTranscriptionUpdate, onError, disabled }) => {
       
       console.log("Microphone access granted");
       
-      const ws = new WebSocket('ws://localhost:8080/api/speech/stream');
+      const ws = new WebSocket(`${WSS_URL}/speech/stream`);
       
       const source = audioContext.createMediaStreamSource(stream);
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
