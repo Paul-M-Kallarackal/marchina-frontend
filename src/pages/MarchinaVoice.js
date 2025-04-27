@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Box,
@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
+import PendingIcon from '@mui/icons-material/Pending';
 import PersonIcon from '@mui/icons-material/Person';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import AudioOutput from '../components/AudioOutput';
@@ -147,17 +148,49 @@ export const MarchinaVoice = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [stopRecording, setStopRecording] = useState(() => () => {});
   const [currentTranscription, setCurrentTranscription] = useState('');
+  const [wsConnected, setWsConnected] = useState(false);
+  const scrollContainerRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
-  // Function to handle sending messages
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [messages, currentTranscription]);
+
+  const handleAudioControl = () => {
+    console.log("handleAudioControl called, audioRef:", audioRef.current);
+    
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        console.log("Audio paused");
+        audioRef.current.currentTime = 0;
+        console.log("Audio position reset");
+        
+        const audio = audioRef.current;
+        audio.removeEventListener('play', () => setIsPlaying(true));
+        audio.removeEventListener('ended', () => setIsPlaying(false));
+        audio.removeEventListener('pause', () => setIsPlaying(false));
+        
+        audioRef.current = null;
+        setIsPlaying(false);
+        console.log("Audio cleanup complete");
+      } catch (error) {
+        console.error("Error stopping audio:", error);
+      }
+    } else {
+      console.log("No audio reference to stop");
+    }
+  };
+
   const handleSendMessage = async (message) => {
-    // Add user message to chat
     setMessages(prev => [...prev, {
       type: 'user',
       content: message
     }]);
-    
     setIsProcessing(true);
-    
     try {
       const response = await fetch('http://localhost:8080/api/chat', {
         method: 'POST',
@@ -167,10 +200,7 @@ export const MarchinaVoice = () => {
         },
         body: JSON.stringify({ message })
       });
-      
       const data = await response.json();
-      
-      // Add AI's response to chat
       setMessages(prev => [...prev, {
         type: 'assistant',
         content: data.response,
@@ -178,14 +208,18 @@ export const MarchinaVoice = () => {
         requirementsGathered: data.requirementsGathered,
         projectId: data.projectId
       }]);
-      
-      // Play audio response
       if (data.audioData) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioData}`);
-        await audio.play();
+        try {
+          const audio = new Audio(`data:audio/mp3;base64,${data.audioData}`);
+          audioRef.current = audio;
+          audio.addEventListener('play', () => setIsPlaying(true));
+          audio.addEventListener('ended', () => setIsPlaying(false));
+          audio.addEventListener('pause', () => setIsPlaying(false));
+          await audio.play();
+        } catch (error) {
+          console.error("Error playing audio:", error);
+        }
       }
-      
-      // If final message received, redirect to projects page
       if (data.requirementsGathered && data.projectId) {
         navigate(`/projects/${data.projectId}`);
       }
@@ -205,13 +239,10 @@ export const MarchinaVoice = () => {
     try {
       setIsRecording(true);
       setCurrentTranscription('');
-      
       console.log("Starting voice input...");
-      
       const audioContext = new (window.AudioContext || window.webkitAudioContext)({
         sampleRate: 16000
       });
-      
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -219,38 +250,27 @@ export const MarchinaVoice = () => {
           autoGainControl: true
         }
       });
-      
       console.log("Microphone access granted");
-      
       const ws = new WebSocket('ws://localhost:8080/api/speech/stream');
-      
       const source = audioContext.createMediaStreamSource(stream);
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
-      
       source.connect(processor);
       processor.connect(audioContext.destination);
-      
       let isStopped = false;
       let finalTranscriptions = [];
       let currentPartial = '';
-      
       const cleanup = () => {
         if (isStopped) return;
         isStopped = true;
-        
+        setWsConnected(false);
         console.log('Cleaning up audio resources');
-        
         processor.disconnect();
         source.disconnect();
         stream.getTracks().forEach(track => track.stop());
-        
         if (ws.readyState === WebSocket.OPEN) {
           ws.close();
         }
-        
         setIsRecording(false);
-
-        // If we have a final transcription, send it to the AI
         if (finalTranscriptions.length > 0 || currentPartial) {
           const finalText = finalTranscriptions.join(' ') + (currentPartial ? ' ' + currentPartial : '');
           if (finalText.trim()) {
@@ -258,16 +278,14 @@ export const MarchinaVoice = () => {
           }
         }
       };
-      
       ws.onopen = () => {
         console.log('WebSocket connection established');
+        setWsConnected(true);
       };
-      
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           console.log('Received transcription:', data);
-          
           if (data.type === 'transcription') {
             if (data.isFinal) {
               finalTranscriptions.push(data.text);
@@ -275,7 +293,6 @@ export const MarchinaVoice = () => {
             } else {
               currentPartial = data.text;
             }
-            
             const finalText = finalTranscriptions.join(' ');
             const fullText = finalText + (currentPartial ? ' ' + currentPartial : '');
             setCurrentTranscription(fullText);
@@ -286,37 +303,31 @@ export const MarchinaVoice = () => {
           console.error('Error parsing WebSocket message:', e);
         }
       };
-      
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
         handleError('Error with transcription service. Please try again.');
         cleanup();
       };
-      
       ws.onclose = () => {
         console.log('WebSocket connection closed');
         cleanup();
       };
-      
       processor.onaudioprocess = (e) => {
         if (ws.readyState === WebSocket.OPEN && !isStopped) {
           const inputData = e.inputBuffer.getChannelData(0);
           const pcmData = new Int16Array(inputData.length);
-          
           for (let i = 0; i < inputData.length; i++) {
             pcmData[i] = Math.max(-32768, Math.min(32767, Math.floor(inputData[i] * 32767)));
           }
-          
           ws.send(pcmData.buffer);
         }
       };
-      
       setStopRecording(() => () => {
         console.log('Manual stop recording triggered');
         cleanup();
       });
-      
     } catch (error) {
+      setWsConnected(false);
       console.error('Error with voice recording:', error);
       handleError('Error accessing microphone. Please check permissions and try again.');
       setIsRecording(false);
@@ -397,8 +408,8 @@ export const MarchinaVoice = () => {
             overflow: 'hidden'
           }}
         >
-          {/* Messages Container */}
           <Box 
+            ref={scrollContainerRef}
             sx={{ 
               flexGrow: 1,
               overflowY: 'auto',
@@ -415,17 +426,17 @@ export const MarchinaVoice = () => {
                   isLoading={isProcessing && index === messages.length - 1}
                 />
               ))}
-              {isRecording && currentTranscription && (
-                <Message
-                  type="user"
-                  content={currentTranscription}
-                  isLoading={true}
-                />
+              {isRecording && (
+                  <Message
+                    key="recording-message"
+                    type="user"
+                    content={wsConnected ? currentTranscription : "Connecting..."}
+                    isLoading={wsConnected}
+                  />
               )}
             </AnimatePresence>
           </Box>
 
-          {/* Voice Input Section */}
           <Box 
             sx={{ 
               p: 2,
@@ -473,14 +484,22 @@ export const MarchinaVoice = () => {
                   p: 1.5,
                   borderRadius: '50%',
                   bgcolor: 'background.paper',
-                  background: isRecording 
+                  background: isRecording && !isPlaying
                     ? 'linear-gradient(135deg, #ef4444 0%, #f43f5e 100%)'
                     : 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
                   transition: 'all 0.3s ease'
                 }}
               >
                 <IconButton
-                  onClick={isRecording ? stopRecording : handleVoiceInput}
+                  onClick={() => {
+                    if (isPlaying) {
+                      handleAudioControl();
+                    } else if (isRecording) {
+                      stopRecording();
+                    } else {
+                      handleVoiceInput();
+                    }
+                  }}
                   disabled={isProcessing}
                   sx={{
                     color: '#fff',
@@ -492,7 +511,11 @@ export const MarchinaVoice = () => {
                     }
                   }}
                 >
-                  {isRecording ? (
+                  {isPlaying ? (
+                    <StopIcon sx={{ fontSize: 28 }} />
+                  ) : isRecording && !wsConnected ? (
+                    <PendingIcon sx={{ fontSize: 28 }} />
+                  ) : isRecording ? (
                     <StopIcon sx={{ fontSize: 28 }} />
                   ) : (
                     <MicIcon sx={{ fontSize: 28 }} />
