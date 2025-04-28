@@ -14,6 +14,7 @@ import {
   useTheme,
   alpha
 } from '@mui/material';
+import { API_URL, WSS_URL } from '../constants/api';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import PendingIcon from '@mui/icons-material/Pending';
@@ -192,7 +193,7 @@ export const MarchinaVoice = () => {
     }]);
     setIsProcessing(true);
     try {
-      const response = await fetch('http://localhost:8080/api/chat', {
+      const response = await fetch(`${API_URL}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +252,7 @@ export const MarchinaVoice = () => {
         }
       });
       console.log("Microphone access granted");
-      const ws = new WebSocket('ws://localhost:8080/api/speech/stream');
+      const ws = new WebSocket(`${WSS_URL}/speech/stream`);
       const source = audioContext.createMediaStreamSource(stream);
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
       source.connect(processor);

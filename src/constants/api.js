@@ -1,5 +1,6 @@
 
 export const API_URL = 'https://marchina.calmmoss-a81a16c4.eastus.azurecontainerapps.io/api';
+export const WSS_URL = 'wss://marchina.calmmoss-a81a16c4.eastus.azurecontainerapps.io/api';
 
 export const getApiUrl = () =>  process.env.REACT_APP_API_URL || API_URL;
 
