@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 
-const Message = ({ content, audioData, isLoading, type }) => {
+const Message = ({ content, audioData, isLoading, type, audioRef, setIsPlaying }) => {
   const theme = useTheme();
   
   return (
@@ -94,7 +94,7 @@ const Message = ({ content, audioData, isLoading, type }) => {
               >
                 {content}
               </Typography>
-              {audioData && <AudioOutput audioData={audioData} />}
+              {audioData && <AudioOutput audioData={audioData} audioRef={audioRef} setIsPlaying={setIsPlaying}/>}
               {isLoading && (
                 <Stack 
                   direction="row" 
@@ -425,6 +425,9 @@ export const MarchinaVoice = () => {
                   content={message.content}
                   audioData={message.audioData}
                   isLoading={isProcessing && index === messages.length - 1}
+                  audioRef={audioRef}
+                  setIsPlaying={setIsPlaying}
+
                 />
               ))}
               {isRecording && (
