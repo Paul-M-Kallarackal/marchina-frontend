@@ -416,7 +416,7 @@ DashboardLayout.propTypes = {
         const token = authService.getToken();
         const response = await axios({
             method: 'DELETE',
-            url: buildUrl('/chat/conversation'),
+            url: buildUrl('/chat'),
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -432,7 +432,7 @@ DashboardLayout.propTypes = {
     }
 };
 
-// const response = await axios.delete('/api/chat/conversation', {
+// const response = await axios.delete('/api/chat', {
 //     headers: {
 //         'Authorization': `Bearer ${token}`
 //     }
