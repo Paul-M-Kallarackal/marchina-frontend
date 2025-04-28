@@ -27,6 +27,12 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MicIcon from '@mui/icons-material/Mic';
 import PersonIcon from '@mui/icons-material/Person';
 import { useAuth } from '../contexts/AuthContext';
+// Add this import at the top
+import DeleteIcon from '@mui/icons-material/Delete';
+import axios from 'axios';
+import { authService } from '../services/authService';
+import { buildUrl } from '../constants/api';
+import { useLocation } from 'react-router-dom';
 
 const drawerWidth = 280;
 
@@ -63,6 +69,8 @@ export const DashboardLayout = ({
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [userMenuAnchor, setUserMenuAnchor] = useState(null);
     const theme = useTheme();
+    const location = useLocation();
+
  
     const navigate = useNavigate();
      const { user, signOut } = useAuth();
@@ -150,6 +158,26 @@ export const DashboardLayout = ({
                     </Box>
 
                     <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {location.pathname === '/voice' && (
+                            <Button
+                                onClick={clearConversation}
+                                startIcon={<DeleteIcon />}
+                                sx={{
+                                    background: 'transparent',
+                                    color: '#dc2626',
+                                    '&:hover': {
+                                    background: 'linear-gradient(135deg, #fecaca 0%, #fca5a5 100%)',
+                                    },
+                                    textTransform: 'none',
+                                    px: 3,
+                                    py: 1,
+                                    borderRadius: 2,
+                                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)',
+                                }}
+                                >
+                                Clear Session
+                            </Button>
+                        )}
                         <Button
                             component={NavLink}
                             to="/voice"
@@ -380,3 +408,40 @@ DashboardLayout.propTypes = {
         })
     )
 }; 
+
+  
+  const clearConversation = async () => {
+    
+    try {
+        const token = authService.getToken();
+        const response = await axios({
+            method: 'DELETE',
+            url: buildUrl('/chat/conversation'),
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.status === 200) {
+            console.log('Conversation cleared successfully');
+            window.location.reload();
+            // Handle UI updates here
+        }
+    } catch (error) {
+        console.error('Error clearing conversation:', error);
+    }
+};
+
+// const response = await axios.delete('/api/chat/conversation', {
+//     headers: {
+//         'Authorization': `Bearer ${token}`
+//     }
+// });
+
+// if (response.status === 200) {
+//     console.log('Conversation cleared successfully');
+//     // Handle UI updates here
+// }
+// } catch (error) {
+// console.error('Error clearing conversation:', error);
+// }
