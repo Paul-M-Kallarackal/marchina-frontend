@@ -2,7 +2,7 @@
 
 ![Azure Static Web Apps](https://img.shields.io/badge/deployed--on-Azure%20Static%20Web%20Apps-blue)
 
-Marchina Frontend is the frontend for Marchina - Your Tech Diagram AI Agent.
+Marchina Frontend is the frontend for Marchina.
 
 Quick Links to Marchina Repositories
 - [Marchina Backend](https://github.com/Paul-M-Kallarackal/marchina-backend)
